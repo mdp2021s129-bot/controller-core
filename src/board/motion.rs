@@ -5,13 +5,21 @@ use micromath::F32Ext;
 use qei::QeiManager;
 use stm32f1xx_hal::{pwm::Channel, time::Hertz};
 
+/// Q17_15 fixed point type.
+pub type Q17_15 = FixedI32<fixed::types::extra::U15>;
+
 /// Servo angle.
-/// Equivalent to Q31.
 ///
 /// -1: Lower limit.
 /// 0: Neutral.
 /// 1: Upper limit.
-pub type Angle = FixedI32<fixed::types::extra::U15>;
+pub type Angle = Q17_15;
+
+/// Motor PWM duty cycle.
+/// -1: Full reverse.
+/// 0: stop (brake).
+/// 1: Full forward.
+pub type Duty = Q17_15;
 
 /// Models the vehicle's steering (backed by a TD8120MG servo).
 pub struct Steering<T: Pwm> {
@@ -149,6 +157,7 @@ pub struct Wheels<T: Pwm, Q1: Qei, Q2: Qei, P: OutputPin> {
     ins: [TB6612FNGControlPins<P>; 2],
     channels: [T::Channel; 2],
     encoders: (QeiManager<Q1>, QeiManager<Q2>),
+    max_duty: Duty,
 }
 
 impl<
@@ -180,6 +189,7 @@ impl<
 
         let [insl, insr] = ins;
         let (encl, encr) = encoders;
+        let max_duty = pwm.get_max_duty().into();
 
         let mut out = Self {
             pwm,
@@ -189,15 +199,16 @@ impl<
             ],
             channels,
             encoders: (QeiManager::new(encl), QeiManager::new(encr)),
+            max_duty,
         };
 
-        out.drive(Wheel::LEFT, false, 0);
-        out.drive(Wheel::RIGHT, false, 0);
+        out.drive(Wheel::LEFT, 0_u16.into());
+        out.drive(Wheel::RIGHT, 0_u16.into());
         out
     }
 
-    /// Obtain the maximum possible duty cycle.
-    pub fn max_duty(&self) -> T::Duty {
+    /// Obtain the PWM resolution.
+    pub fn resolution(&self) -> T::Duty {
         self.pwm.get_max_duty()
     }
 
@@ -210,10 +221,10 @@ impl<
     /// duty cycle.
     ///
     /// If `duty == 0`, the motor is actively braked.
-    pub fn drive(&mut self, which: Wheel, cw: bool, duty: T::Duty) {
+    pub fn drive(&mut self, which: Wheel, duty: Duty) {
         let control = &mut self.ins[which.index()];
-        if duty > 0 {
-            if cw {
+        if duty != 0 {
+            if duty > 0 {
                 control.cw();
             } else {
                 control.ccw();
@@ -222,7 +233,10 @@ impl<
             control.brake();
         }
 
-        self.pwm.set_duty(self.channels[which.index()], duty);
+        self.pwm.set_duty(
+            self.channels[which.index()],
+            (duty.abs() * self.max_duty).checked_to_num().unwrap(),
+        );
     }
 
     /// Reads the positions of both motors' output shafts, while updating the
