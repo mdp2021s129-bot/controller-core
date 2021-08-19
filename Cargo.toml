@@ -1,0 +1,13 @@
+[package]
+authors = ["Shenghao Yang <me@shenghaoyang.info>"]
+name = "controller-core"
+edition = "2018"
+version = "0.1.0"
+
+[dependencies]
+embedded-hal = { version = "0.2.6", features = ["unproven"] }
+stm32f1xx-hal = { git = "https://github.com/shenghaoyang/stm32f1xx-hal.git", branch = "hse-bypass", features = ["stm32f103"]}
+stm32f1 = { version = "0.13.0", features = ["stm32f103", "rt"] }
+fixed = "1.9.0"
+micromath = "2.0.0"
+qei = "1.0.2"
