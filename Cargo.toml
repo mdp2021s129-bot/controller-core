@@ -8,6 +8,9 @@ version = "0.1.0"
 embedded-hal = { version = "0.2.6", features = ["unproven"] }
 stm32f1xx-hal = { git = "https://github.com/shenghaoyang/stm32f1xx-hal.git", branch = "hse-bypass", features = ["stm32f103"]}
 stm32f1 = { version = "0.13.0", features = ["stm32f103", "rt"] }
+hdcomm-device = { git = "ssh://git@github.com/mdp2021s129-bot/hdcomm.git", branch = "main" }
+hdcomm-core = { git = "ssh://git@github.com/mdp2021s129-bot/hdcomm.git", branch = "main" }
 fixed = "1.9.0"
 micromath = "2.0.0"
 qei = "1.0.2"
+heapless = "0.7.0"
