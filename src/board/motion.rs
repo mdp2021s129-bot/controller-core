@@ -1,7 +1,8 @@
 /// Board motion control capabilities.
 use embedded_hal::{digital::v2::OutputPin, Pwm, Qei};
 use fixed::FixedI32;
-use micromath::F32Ext;
+// Micromath is acceptable for the operations performed in this module.
+use micromath::F32Ext as _;
 use qei::QeiManager;
 use stm32f1xx_hal::{pwm::Channel, time::Hertz};
 
@@ -47,9 +48,9 @@ impl<T: Pwm<Channel = Channel, Duty = u16, Time = Hertz>> Steering<T> {
     /// Also resets the servo to its neutral position.
     pub fn new(mut pwm: T, channel: T::Channel) -> Self {
         let seconds_per_duty: f32 =
-            (1.0_f32 / Self::FREQUENCY.0 as f32) / pwm.get_max_duty() as f32;
-        let min_duty = seconds_per_duty * 500e-6_f32;
-        let max_duty = seconds_per_duty * 2500e-6_f32;
+            (1.0_f32 / Self::FREQUENCY.0 as f32) / (pwm.get_max_duty() as f32);
+        let min_duty = 500e-6_f32 / seconds_per_duty;
+        let max_duty = 2500e-6_f32 / seconds_per_duty;
         let neutral_duty = (min_duty + max_duty) / 2.0;
 
         let min_duty = min_duty.ceil() as T::Duty;
@@ -72,20 +73,20 @@ impl<T: Pwm<Channel = Channel, Duty = u16, Time = Hertz>> Steering<T> {
 
     /// Drives the servo to the given angle.
     pub fn set(&mut self, angle: Angle) {
-        if angle < 0_i16 {
+        if angle > 0_i16 {
             // FIXME: remove after checking.
             self.pwm.set_duty(
                 self.channel,
                 (Angle::from(self.max_duty - self.neutral_duty) * angle.abs())
-                    .checked_to_num()
-                    .unwrap(),
+                    .checked_to_num::<T::Duty>()
+                    .unwrap() + self.neutral_duty,
             )
         } else {
             self.pwm.set_duty(
                 self.channel,
-                (Angle::from(self.neutral_duty - self.min_duty) * angle.abs())
-                    .checked_to_num()
-                    .unwrap(),
+                self.neutral_duty - ((Angle::from(self.neutral_duty - self.min_duty) * angle.abs())
+                    .checked_to_num::<T::Duty>()
+                    .unwrap()),
             )
         }
     }
