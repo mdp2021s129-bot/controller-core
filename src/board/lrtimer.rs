@@ -71,7 +71,7 @@ impl LrTimer {
     /// Should be called in a section with `INTERRUPT` disabled.
     #[inline]
     fn isr_needs_servicing(&self) -> bool {
-        NVIC::is_pending(INTERRUPT)
+        NVIC::is_pending(INTERRUPT) || NVIC::is_active(INTERRUPT)
     }
 
     /// Calculates the number of milliseconds given a counter value and an
