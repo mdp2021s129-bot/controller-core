@@ -79,14 +79,16 @@ impl<T: Pwm<Channel = Channel, Duty = u16, Time = Hertz>> Steering<T> {
                 self.channel,
                 (Angle::from(self.max_duty - self.neutral_duty) * angle.abs())
                     .checked_to_num::<T::Duty>()
-                    .unwrap() + self.neutral_duty,
+                    .unwrap()
+                    + self.neutral_duty,
             )
         } else {
             self.pwm.set_duty(
                 self.channel,
-                self.neutral_duty - ((Angle::from(self.neutral_duty - self.min_duty) * angle.abs())
-                    .checked_to_num::<T::Duty>()
-                    .unwrap()),
+                self.neutral_duty
+                    - ((Angle::from(self.neutral_duty - self.min_duty) * angle.abs())
+                        .checked_to_num::<T::Duty>()
+                        .unwrap()),
             )
         }
     }
