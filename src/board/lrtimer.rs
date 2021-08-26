@@ -6,7 +6,7 @@ use cortex_m::peripheral::NVIC;
 ///
 /// This timer assumes a timer clock of `72_000_000` Hz and runs off TIM2.
 ///
-/// The 32 bit milliseconds output overflows every ~99 days.
+/// The 32 bit milliseconds output overflows every ~24 days.
 use stm32f1xx_hal::{pac, rcc::Clocks, timer};
 
 /// Timer reload value.
@@ -14,7 +14,7 @@ pub const RELOAD_VALUE: u16 = 0xffff;
 
 /// Timer prescaler value.
 // 36000 ticks = 1 timer tick
-// -> 72MHz / 36000 -> 2000Hz -> 2ms per tick.
+// -> 72MHz / 36000 -> 2000Hz -> 0.5ms per tick.
 pub const PRESCALER_VALUE: u16 = 35999;
 
 /// Expected `TIM2CLK` frequency.
@@ -26,10 +26,12 @@ pub const TIM2CLK_EXPECTED_HZ: u32 = 72_000_000;
 pub const INTERRUPT: pac::Interrupt = pac::Interrupt::TIM2;
 
 /// Number of milliseconds per counter update.
-pub const MILLISECONDS_PER_UPDATE: u32 = 0xffff * 2;
+pub const MILLISECONDS_PER_UPDATE: u32 = 0x10000 / 2;
 
-/// Number of milliseconds per timer tick. Also the timer resolution.
-pub const MILLISECONDS_PER_COUNT: u16 = 2;
+/// Number timer ticks per millisecond.
+///
+/// Also indirectly specifies the timer resolution.
+pub const COUNTS_PER_MILLISECOND: u16 = 2;
 
 pub struct LrTimer {
     /// Hardware timer associated with this software timer.
@@ -91,6 +93,6 @@ impl LrTimer {
             (cnt, updates)
         };
 
-        (cnt as u32 * MILLISECONDS_PER_COUNT as u32) + (updates * MILLISECONDS_PER_UPDATE)
+        (cnt / COUNTS_PER_MILLISECOND) as u32 + (updates * MILLISECONDS_PER_UPDATE)
     }
 }
