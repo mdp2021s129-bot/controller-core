@@ -87,6 +87,7 @@ impl LrTimer {
         if self.isr_needs_servicing() {
             self.tim.clear_update_interrupt_flag();
             self.updates = self.updates.wrapping_add(1);
+            NVIC::unpend(INTERRUPT);
         }
     }
 
