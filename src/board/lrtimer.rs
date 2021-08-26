@@ -33,6 +33,9 @@ pub const MILLISECONDS_PER_UPDATE: u32 = 0x10000 / 2;
 /// Also indirectly specifies the timer resolution.
 pub const COUNTS_PER_MILLISECOND: u16 = 2;
 
+/// Timer instant type.
+pub type Instant = embedded_time::Instant<LrTimer>;
+
 pub struct LrTimer {
     /// Hardware timer associated with this software timer.
     tim: timer::CountDownTimer<pac::TIM2>,
@@ -132,7 +135,7 @@ impl LrTimer {
     /// registers & the timer interrupt pending flag.
     ///
     /// It's essentially an automatically-retrying version of `Clock::try_now()`.
-    pub fn now(&mut self) -> Instant<Self> {
+    pub fn now(&mut self) -> Instant {
         loop {
             match self.try_now() {
                 Ok(now) => return now,
@@ -142,7 +145,7 @@ impl LrTimer {
     }
 }
 
-use embedded_time::{clock::*, duration::*, Instant};
+use embedded_time::{clock::*, duration::*};
 
 impl Clock for LrTimer {
     type T = u32;
@@ -157,7 +160,7 @@ impl Clock for LrTimer {
     ///
     /// This function disables all interrupts for a short while when reading timer
     /// registers & the timer interrupt pending flag.
-    fn try_now(&self) -> Result<Instant<Self>, Error> {
+    fn try_now(&self) -> Result<Instant, Error> {
         self.ms_no_update()
             .map(Instant::new)
             .map_err(|_| Error::Unspecified)
