@@ -6,7 +6,7 @@ use cortex_m::peripheral::NVIC;
 ///
 /// This timer assumes a timer clock of `72_000_000` Hz and runs off TIM2.
 ///
-/// The 32 bit milliseconds output overflows every ~24 days.
+/// The 32 bit milliseconds output overflows every ~49 days.
 use stm32f1xx_hal::{pac, rcc::Clocks, timer};
 
 /// Timer reload value.
@@ -64,9 +64,19 @@ impl LrTimer {
     ///
     /// Assumes that the timer is running & the timer is setup for interrupts
     /// to be generated.
+    ///
+    /// Should be called in a section with `INTERRUPT` disabled.
     #[inline]
     fn isr_needs_servicing(&self) -> bool {
         NVIC::is_pending(INTERRUPT)
+    }
+
+    /// Calculates the number of milliseconds given a counter value and an
+    /// update count.
+    fn calculate_ms(updates: u32, cnt: u16) -> u32 {
+        updates
+            .wrapping_mul(MILLISECONDS_PER_UPDATE)
+            .wrapping_add((cnt / COUNTS_PER_MILLISECOND) as u32)
     }
 
     /// Function to be run on a timer interrupt.
@@ -93,6 +103,62 @@ impl LrTimer {
             (cnt, updates)
         };
 
-        (cnt / COUNTS_PER_MILLISECOND) as u32 + (updates * MILLISECONDS_PER_UPDATE)
+        Self::calculate_ms(updates, cnt)
+    }
+
+    /// Equivalent to `ms()`, with the added exception that an error can be
+    /// returned if the timer overflows.
+    ///
+    /// This function disables all interrupts for a short while when reading timer
+    /// registers & the timer interrupt pending flag.
+    ///
+    /// `isr()` should be called before `ms_no_update()` is retried.
+    pub fn ms_no_update(&self) -> Result<u32, ()> {
+        let (cnt, updates, needs_servicing) = cortex_m::interrupt::free(|_| {
+            (self.tim.cnt(), self.updates, self.isr_needs_servicing())
+        });
+
+        if needs_servicing {
+            Err(())
+        } else {
+            Ok(Self::calculate_ms(updates, cnt))
+        }
+    }
+
+    /// Retrieves the current timer value.
+    ///
+    /// This function disables all interrupts for a short while when reading timer
+    /// registers & the timer interrupt pending flag.
+    ///
+    /// It's essentially an automatically-retrying version of `Clock::try_now()`.
+    pub fn now(&mut self) -> Instant<Self> {
+        loop {
+            match self.try_now() {
+                Ok(now) => return now,
+                Err(_) => self.isr(),
+            }
+        }
+    }
+}
+
+use embedded_time::{clock::*, duration::*, Instant};
+
+impl Clock for LrTimer {
+    type T = u32;
+
+    const SCALING_FACTOR: Fraction = Fraction::new(1, 2000);
+
+    /// Try to obtain the current time.
+    ///
+    /// If `Err(Error::NotSpecified)` is returned, then `isr()` must be called
+    /// on the timer before retrying (either through an ISR / manually if in a
+    /// context where that cannot be called).
+    ///
+    /// This function disables all interrupts for a short while when reading timer
+    /// registers & the timer interrupt pending flag.
+    fn try_now(&self) -> Result<Instant<Self>, Error> {
+        self.ms_no_update()
+            .map(Instant::new)
+            .map_err(|_| Error::Unspecified)
     }
 }
