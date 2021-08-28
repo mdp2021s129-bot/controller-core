@@ -94,8 +94,9 @@ pub enum Event<HRCLOCK: Clock> {
 /// Driver structure.
 ///
 /// `TRIG`: Trigger pin.
-/// `HRCLOCK`: High-resolution (microsecond-level) cMicrosecondsapable clock.
-/// `LRCLOCK`: Low-resolution clock used to measure start & end timestamps.
+/// `HRCLOCK`: High-resolution (microsecond-level) clock.
+/// `LRCLOCK`: Low-resolution clock used to record the start and end timestamps,
+///            as well as detect timeouts.
 pub struct Sr04<TRIG, HRCLOCK: Clock, LRCLOCK: Clock> {
     /// Trigger pin.
     trig: TRIG,
@@ -121,10 +122,8 @@ where
 
     /// Trigger the sensor.
     ///
-    /// An `Ok()` result requires that the caller pass the
-    /// `TriggerComplete` event to
-    ///
-    /// `Event::TriggerComplete` to `process()`.
+    /// An `Ok()` result requires that the caller pass `Event::TriggerComplete`
+    /// to `process()` after a duration of `TRIGGER_WIDTH`.
     pub fn trigger(&mut self, at: Instant<LRCLOCK>) -> Result<(), Error> {
         self.poll(at);
         match self.state {
@@ -143,7 +142,9 @@ where
     }
 
     /// Obtain the last complete measurement, if any.
-    pub fn measurement(&self) -> Option<&Measurement<LRCLOCK>> {
+    pub fn measurement(&mut self, at: Instant<LRCLOCK>) -> Option<&Measurement<LRCLOCK>> {
+        self.poll(at);
+
         self.last.as_ref()
     }
 
