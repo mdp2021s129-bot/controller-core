@@ -216,7 +216,7 @@ where
                             // Because it should be impossible for the width to exceed 60_000us
                             // unless the two timers are derived from the same clock / have
                             // significantly different precision.
-                            let echo_duration: Microseconds<u32> = core::cmp::max(
+                            let echo_duration: Microseconds<u32> = core::cmp::min(
                                 (fall - *rise).try_into().unwrap_or(TIMEOUT_US),
                                 TIMEOUT_US,
                             );
