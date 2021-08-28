@@ -1,7 +1,7 @@
 use core::convert::{TryFrom, TryInto};
-use embedded_hal::digital::v2::{OutputPin, StatefulOutputPin};
+use embedded_hal::digital::v2::StatefulOutputPin;
 use embedded_time::{
-    duration::{Generic, Microseconds, Milliseconds},
+    duration::{Generic, Microseconds},
     Clock, Instant,
 };
 use fixed::types::U16F16 as DistanceImpl;
