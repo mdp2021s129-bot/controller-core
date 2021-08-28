@@ -1,5 +1,5 @@
 use core::convert::{TryFrom, TryInto};
-use embedded_hal::digital::v2::OutputPin;
+use embedded_hal::digital::v2::{OutputPin, StatefulOutputPin};
 use embedded_time::{
     duration::{Generic, Microseconds, Milliseconds},
     Clock, Instant,
@@ -108,7 +108,7 @@ pub struct Sr04<TRIG, HRCLOCK: Clock, LRCLOCK: Clock> {
     last: Option<Measurement<LRCLOCK>>,
 }
 
-impl<TRIG: OutputPin, HRCLOCK: Clock, LRCLOCK: Clock> Sr04<TRIG, HRCLOCK, LRCLOCK>
+impl<TRIG: StatefulOutputPin, HRCLOCK: Clock, LRCLOCK: Clock> Sr04<TRIG, HRCLOCK, LRCLOCK>
 where
     Milliseconds: TryFrom<Generic<<LRCLOCK as Clock>::T>>,
     Microseconds: TryFrom<Generic<<HRCLOCK as Clock>::T>>,
@@ -148,6 +148,11 @@ where
     /// Obtain the last complete measurement, if any.
     pub fn measurement(&self) -> Option<&Measurement<LRCLOCK>> {
         self.last.as_ref()
+    }
+
+    /// Returns the currently set state of the trigger pin.
+    pub fn is_trig_high(&self) -> bool {
+        self.trig.is_set_high().unwrap_or(false)
     }
 
     /// Handles time-based driver state machine transitions.
