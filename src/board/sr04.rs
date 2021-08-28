@@ -16,11 +16,8 @@ pub type Distance = DistanceImpl;
 /// Time after the start of the measurement beyond which we consider the
 /// measurement to have timed out.
 ///
-/// The HC-SR04 datasheet suggests a timeout of at least 60 milliseconds.
-pub const TIMEOUT: Milliseconds = Milliseconds(60);
-
-/// Microsecond-resolution equivalent of `TIMEOUT`.
-pub const TIMEOUT_US: Microseconds = Microseconds(TIMEOUT.0 * 1000);
+/// The HC-SR04 datasheet suggests a timeout of 60 milliseconds.
+pub const TIMEOUT: Microseconds = Microseconds(60);
 
 /// Minimum width of the trigger pulse.
 pub const TRIGGER_WIDTH: Microseconds = Microseconds(10);
@@ -110,7 +107,7 @@ pub struct Sr04<TRIG, HRCLOCK: Clock, LRCLOCK: Clock> {
 
 impl<TRIG: StatefulOutputPin, HRCLOCK: Clock, LRCLOCK: Clock> Sr04<TRIG, HRCLOCK, LRCLOCK>
 where
-    Milliseconds: TryFrom<Generic<<LRCLOCK as Clock>::T>>,
+    Microseconds: TryFrom<Generic<<LRCLOCK as Clock>::T>>,
     Microseconds: TryFrom<Generic<<HRCLOCK as Clock>::T>>,
 {
     /// Create a new `Sr04` instance.
@@ -161,7 +158,7 @@ where
     fn poll(&mut self, at: Instant<LRCLOCK>) -> bool {
         match self.state {
             State::Measuring { start, .. } => {
-                let elapsed: Milliseconds<u32> = (at - start).try_into().unwrap_or(TIMEOUT);
+                let elapsed: Microseconds<u32> = (at - start).try_into().unwrap_or(TIMEOUT);
                 if elapsed >= TIMEOUT {
                     self.state = State::Idle;
                     self.last = Some(Measurement {
@@ -217,8 +214,8 @@ where
                             // unless the two timers are derived from the same clock / have
                             // significantly different precision.
                             let echo_duration: Microseconds<u32> = core::cmp::min(
-                                (fall - *rise).try_into().unwrap_or(TIMEOUT_US),
-                                TIMEOUT_US,
+                                (fall - *rise).try_into().unwrap_or(TIMEOUT),
+                                TIMEOUT,
                             );
                             self.last = Some(Measurement {
                                 start,

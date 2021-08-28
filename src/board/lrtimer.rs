@@ -43,6 +43,14 @@ pub struct LrTimer {
     updates: u32,
 }
 
+impl core::fmt::Debug for LrTimer {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("LrTimer")
+            .field("updates", &self.updates)
+            .finish_non_exhaustive()
+    }
+}
+
 impl LrTimer {
     /// Creates a new LrTimer.
     ///
@@ -150,7 +158,7 @@ use embedded_time::{clock::*, duration::*};
 impl Clock for LrTimer {
     type T = u32;
 
-    const SCALING_FACTOR: Fraction = Fraction::new(1, 2000);
+    const SCALING_FACTOR: Fraction = Fraction::new(1, 1000);
 
     /// Try to obtain the current time.
     ///
