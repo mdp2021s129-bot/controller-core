@@ -1,8 +1,6 @@
 /// Board motion control capabilities.
 use embedded_hal::{digital::v2::OutputPin, Pwm, Qei};
 use fixed::FixedI32;
-// Micromath is acceptable for the operations performed in this module.
-use micromath::F32Ext as _;
 use qei::QeiManager;
 use stm32f1xx_hal::{pwm::Channel, time::Hertz};
 
