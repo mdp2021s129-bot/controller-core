@@ -17,7 +17,7 @@ pub type Distance = DistanceImpl;
 /// measurement to have timed out.
 ///
 /// The HC-SR04 datasheet suggests a timeout of 60 milliseconds.
-pub const TIMEOUT: Microseconds = Microseconds(60);
+pub const TIMEOUT: Microseconds = Microseconds(60_000);
 
 /// Minimum width of the trigger pulse.
 pub const TRIGGER_WIDTH: Microseconds = Microseconds(10);
