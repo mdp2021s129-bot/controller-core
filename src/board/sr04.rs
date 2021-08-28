@@ -29,7 +29,7 @@ pub const TRIGGER_WIDTH: Microseconds = Microseconds(10);
 /// to meters.
 ///
 /// Based on the speed of sound at 25 deg C (346.06 m/s).
-pub const SCALING_FACTOR: Distance = distance!(0.00069212);
+pub const SCALING_FACTOR: Distance = distance!(0.00017303);
 
 /// Minimum width of the echo pulse.
 ///
@@ -97,7 +97,7 @@ pub enum Event<HRCLOCK: Clock> {
 /// Driver structure.
 ///
 /// `TRIG`: Trigger pin.
-/// `HRCLOCK`: High-resolution (microsecond-level) capable clock.
+/// `HRCLOCK`: High-resolution (microsecond-level) cMicrosecondsapable clock.
 /// `LRCLOCK`: Low-resolution clock used to measure start & end timestamps.
 pub struct Sr04<TRIG, HRCLOCK: Clock, LRCLOCK: Clock> {
     /// Trigger pin.
