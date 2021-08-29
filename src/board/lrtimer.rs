@@ -1,4 +1,5 @@
 use cortex_m::peripheral::NVIC;
+use embedded_hal::blocking::delay::{DelayMs, DelayUs};
 /// Low resolution timer.
 ///
 /// Meant for measuring start / stop times of events that take a relatively
@@ -172,5 +173,32 @@ impl Clock for LrTimer {
         self.ms_no_update()
             .map(Instant::new)
             .map_err(|_| Error::Unspecified)
+    }
+}
+
+impl<T> DelayUs<T> for LrTimer
+where
+    T: Into<u32>,
+{
+    /// Delays execution for the specified amount of microseconds.
+    ///
+    /// Note that since the `LrTimer` is a millisecond-level timer, delay times
+    /// would be rounded up to the nearest millisecond.
+    fn delay_us(&mut self, us: T) {
+        let ms = num::integer::div_ceil(us.into(), 1000_u32);
+        let start = self.ms();
+        while self.ms().wrapping_sub(start) < ms {}
+    }
+}
+
+impl<T> DelayMs<T> for LrTimer
+where
+    T: Into<u32>,
+{
+    /// Delays execution for the specified amount of milliseconds.
+    fn delay_ms(&mut self, ms: T) {
+        let start = self.ms();
+        let ms = ms.into();
+        while self.ms().wrapping_sub(start) < ms {}
     }
 }
