@@ -93,6 +93,13 @@ impl<T: Pwm<Channel = Channel, Duty = u16, Time = Hertz>> Steering<T> {
             )
         }
     }
+
+    /// Idles the servo.
+    ///
+    /// Sends no signal to the servo until another `set()` is called.
+    pub fn idle(&mut self) {
+        self.pwm.set_duty(self.channel, 0)
+    }
 }
 
 /// Structure modelling a set of `TB6612FNG` control pins.
